@@ -54,6 +54,14 @@ function LandingPage(props: IBasePageHOCProps) {
     }
   }, [socket]);
 
+  useEffect(() => {
+    console.log(humidityRecords);
+  }, [humidityRecords]);
+
+  useEffect(() => {
+    console.log(temperatureRecords);
+  }, [temperatureRecords]);
+
   // MARK: Render
   return (
     <BasePageHOC basePageProps={basePageProps}>
