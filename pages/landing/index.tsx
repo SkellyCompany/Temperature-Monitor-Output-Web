@@ -14,6 +14,7 @@ import {
 import io from "socket.io-client";
 import { TemperatureRecord } from "../../domain/entities/TemperatureRecord";
 import { HumidityRecord } from "../../domain/entities/HumidityRecord";
+import { Line } from "react-chartjs-2";
 
 function LandingPage(props: IBasePageHOCProps) {
   // MARK: Props
@@ -23,6 +24,7 @@ function LandingPage(props: IBasePageHOCProps) {
   const landingLocale = Locales.Landing;
   const { t } = useTranslation(landingLocale.identifier);
   const logger = new AppLogger();
+  const maxChartItems = 4;
 
   // MARK: State
   const [socket, setSocket] = useState(null);
@@ -30,6 +32,9 @@ function LandingPage(props: IBasePageHOCProps) {
     useState<TemperatureRecord[]>(null);
   const [humidityRecords, setHumidityRecords] =
     useState<HumidityRecord[]>(null);
+
+  const [temperatureChartData, setTemperatureChartData] = useState(null);
+  const [humidityChartData, setHumidityChartData] = useState(null);
 
   // MARK: Effects
   useEffect(() => {
@@ -55,18 +60,159 @@ function LandingPage(props: IBasePageHOCProps) {
   }, [socket]);
 
   useEffect(() => {
-    console.log(humidityRecords);
+    if (humidityRecords) {
+      let humidityChartData = {
+        labels: humidityRecords
+          .map((humidityRecord) => {
+            let dateObject = new Date(humidityRecord.time);
+            return dateObject.toLocaleString();
+          })
+          .slice(Math.max(humidityRecords.length - maxChartItems, 0)),
+        datasets: [
+          {
+            label: "Humidity",
+            data: humidityRecords
+              .map((humidityRecord) => {
+                return humidityRecord.value * 100;
+              })
+              .slice(Math.max(humidityRecords.length - maxChartItems, 0)),
+            fill: false,
+            backgroundColor: "black",
+            borderColor: "black",
+          },
+        ],
+      };
+      setHumidityChartData(humidityChartData);
+    }
   }, [humidityRecords]);
 
   useEffect(() => {
-    console.log(temperatureRecords);
+    if (temperatureRecords) {
+      let temperatureChartData = {
+        labels: temperatureRecords
+          .map((temperatureRecord) => {
+            let dateObject = new Date(temperatureRecord.time);
+            return dateObject.toLocaleString();
+          })
+          .slice(Math.max(temperatureRecords.length - maxChartItems, 0)),
+        datasets: [
+          {
+            label: "Temperature",
+            data: temperatureRecords
+              .map((temperatureRecord) => {
+                return temperatureRecord.value;
+              })
+              .slice(Math.max(temperatureRecords.length - maxChartItems, 0)),
+            fill: false,
+            backgroundColor: "white",
+            borderColor: "white",
+          },
+        ],
+      };
+      setTemperatureChartData(temperatureChartData);
+    }
   }, [temperatureRecords]);
 
   // MARK: Render
   return (
     <BasePageHOC basePageProps={basePageProps}>
       <div className={css.mainContainer}>
-        {t(landingLocale.title)} Temperature Monitor Output Web
+        <div className={css.chartsContainer}>
+          <div className={css.temperatureContainer}>
+            <div className={css.temperatureHeader}>Temperature</div>
+            {temperatureChartData && (
+              <Line
+                data={temperatureChartData}
+                options={{
+                  plugins: {
+                    legend: {
+                      labels: {
+                        color: "white",
+                        font: {
+                          size: 13,
+                        },
+                      },
+                    },
+                  },
+                  scales: {
+                    y: {
+                      ticks: {
+                        color: "white",
+                        font: {
+                          size: 13,
+                        },
+                        callback: function (value, index) {
+                          return value + " °C";
+                        },
+                      },
+                      grid: {
+                        color: "gray",
+                      },
+                    },
+                    x: {
+                      ticks: {
+                        color: "white",
+                        font: {
+                          size: 11,
+                        },
+                      },
+                      grid: {
+                        color: "gray",
+                      },
+                    },
+                  },
+                }}
+              ></Line>
+            )}
+          </div>
+          <div className={css.humidityContainer}>
+            <div className={css.humidityHeader}>Humidity</div>
+            {humidityChartData && (
+              <Line
+                data={humidityChartData}
+                options={{
+                  plugins: {
+                    legend: {
+                      labels: {
+                        color: "black",
+                        font: {
+                          size: 13,
+                        },
+                      },
+                    },
+                  },
+                  scales: {
+                    y: {
+                      ticks: {
+                        color: "black",
+                        font: {
+                          size: 13,
+                        },
+                        callback: function (value, index) {
+                          return value + "%";
+                        },
+                      },
+                      grid: {
+                        color: "gray",
+                      },
+                    },
+                    x: {
+                      ticks: {
+                        color: "black",
+                        font: {
+                          size: 11,
+                        },
+                      },
+                      grid: {
+                        color: "gray",
+                      },
+                    },
+                  },
+                }}
+              ></Line>
+            )}
+          </div>
+        </div>
       </div>
     </BasePageHOC>
   );
